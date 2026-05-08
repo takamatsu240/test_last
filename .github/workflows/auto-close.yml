@@ -1,0 +1,105 @@
+name: Auto-Close Detector (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      project_id:
+        description: 'Firestore project ID (optional, for multi-tenant)'
+        required: false
+        type: string
+        default: ''
+      ai_analysis_enabled:
+        description: 'Enable AI analysis (Phase 2)'
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      FIREBASE_SERVICE_ACCOUNT_KEY:
+        description: 'Firebase Service Account JSON Key'
+        required: true
+      OPENAI_API_KEY:
+        description: 'OpenAI API Key for GPT-4o'
+        required: true
+      GCP_PROJECT_ID:
+        description: 'Google Cloud Project ID'
+        required: true
+      GCP_WIF_PROVIDER:
+        description: 'GCP Workload Identity Provider'
+        required: false
+      GCP_SA_EMAIL:
+        description: 'GCP Service Account Email'
+        required: false
+
+jobs:
+  auto-close:
+    name: Detect and Close Completed Todos
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 50  # 直近50コミットを取得
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Google Cloud credentials
+        run: |
+          # FIREBASE_SERVICE_ACCOUNT_KEYを一時ファイルに保存
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}' > ${{ github.workspace }}/service-account-key.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=${{ github.workspace }}/service-account-key.json" >> $GITHUB_ENV
+          echo "✅ Google Cloud認証情報を設定しました"
+
+      - name: Run Phase 2 Auto-Close Detection
+        env:
+          FIREBASE_SERVICE_ACCOUNT_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          PROJECT_ID: ${{ inputs.project_id }}
+          REPOSITORY: ${{ github.repository }}
+          PHASE2_AI_ENABLED: ${{ inputs.ai_analysis_enabled }}
+          AI_MODEL: 'gpt-4o'
+        run: |
+          echo "=========================================="
+          echo "🤖 Phase 2 自動クローズ判定"
+          echo "=========================================="
+          echo "📝 コミット: ${{ github.sha }}"
+          echo "👤 プッシュユーザー: ${{ github.actor }}"
+          echo "📁 リポジトリ: ${{ github.repository }}"
+          echo "🏢 プロジェクトID: ${{ inputs.project_id || '(デフォルト)' }}"
+          echo "🤖 AI解析: ${{ inputs.ai_analysis_enabled && '有効' || '無効' }}"
+          echo "📊 判定基準: ${{ inputs.ai_analysis_enabled && '段階的チェックリスト（perfect/OK/insufficient）' || 'ファイル名照合のみ' }}"
+          echo ""
+
+          node tests/analyze-commit.js
+
+          echo ""
+          echo "✅ 自動クローズ判定完了"
+          echo ""
+          echo "📋 判定方式:"
+          echo "  Phase 2: ファイル名照合 + AI判定（完成度: perfect/OK） → クローズ候補"
+          echo ""
+          echo "⚠️  すべてレビュー必須（直接クローズなし）"
+          echo "🌐 アプリを開いてToDoのクローズ候補を確認してください"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "=========================================="
+          echo "📊 自動クローズ判定サマリー"
+          echo "=========================================="
+          echo "📝 コミット: ${{ github.sha }}"
+          echo "🌿 ブランチ: ${{ github.ref_name }}"
+          echo "👤 プッシュユーザー: ${{ github.actor }}"
+          echo ""
+          echo "詳細なログは上記の「Run Phase 2 Auto-Close Detection」ステップを確認してください"
