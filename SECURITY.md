@@ -16,13 +16,13 @@
 ### ❌ やってはいけないこと
 
 ```javascript
-// ❌ ハードコードされた認証情報
-const password = "mypassword123";
-const apiKey = "sk-1234567890abcdef";
+// ❌ ハードコードされた認証情報（絶対に避ける）
+const password = "[EXAMPLE_DO_NOT_USE]";  // 実際の値を直接書かない
+const apiKey = "sk-*********************";  // APIキーをコードに含めない
 
-// ❌ コードにコミット
+// ❌ 設定ファイルに認証情報を直接記載
 const firebaseConfig = {
-  apiKey: "AIzaSyD1234567890",
+  apiKey: "AIza***************",  // これは危険
   // ...
 };
 ```
@@ -179,12 +179,12 @@ service cloud.firestore {
 Firebase Web APIキーは公開情報です：
 
 ```javascript
-// ⚠️ このAPIキーは公開されても問題ありません
+// ⚠️ Firebase Web APIキーは公開されても問題ありません
 // セキュリティはFirestoreルールで制御します
 const firebaseConfig = {
-  apiKey: "AIzaSyD...",  // 公開OK
-  authDomain: "...",      // 公開OK
-  projectId: "...",       // 公開OK
+  apiKey: "AIza***[省略]***",  // 公開OK（ただし省略して表示）
+  authDomain: "your-project.firebaseapp.com",  // 公開OK
+  projectId: "your-project-id",  // 公開OK
 };
 ```
 

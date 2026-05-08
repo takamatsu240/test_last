@@ -435,7 +435,7 @@ show_summary() {
     echo "    const client = redis.createClient({"
     echo "      host: '127.0.0.1',"
     echo "      port: $REDIS_PORT,"
-    echo "      password: '$(cat /root/.redis_password)'"
+    echo "      password: process.env.REDIS_PASSWORD  // パスワードファイルから読み込む"
     echo "    });"
     echo ""
     log_warn "パスワードは安全に保管してください: /root/.redis_password"

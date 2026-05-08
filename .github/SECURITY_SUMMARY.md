@@ -9,17 +9,13 @@ GitHub Actionsのセキュリティチェックに対応するため、以下の
 **ファイル**: `infrastructure/docker-compose.redis.yml`
 
 **修正内容**:
-- デフォルトパスワード `changeme` を削除
+- デフォルトパスワード（例: `[REDACTED]`）を削除
 - 環境変数が必須であることを明示（`:?` 構文を使用）
 - セキュリティ警告コメントを追加
 
-```yaml
-# 修正前
---requirepass ${REDIS_PASSWORD:-changeme}
-
-# 修正後
---requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD environment variable is required}
-```
+**変更の詳細**:
+- 修正前: デフォルト値として脆弱なパスワードが設定されていた
+- 修正後: `${REDIS_PASSWORD:?REDIS_PASSWORD environment variable is required}` 形式で必須化
 
 ### 2. Redis クライアントのパスワード設定改善
 
@@ -48,17 +44,13 @@ if (!process.env.REDIS_PASSWORD) {
 **ファイル**: `public/js/firebase-config.js`
 
 **修正内容**:
-- プレースホルダーをより明確に
+- プレースホルダーをより明確に（例: `REPLACE_WITH_***` 形式）
 - セキュリティ警告コメントを追加
 - APIキーが公開情報であることを明記
 
-```javascript
-// 修正前
-apiKey: "YOUR_API_KEY",
-
-// 修正後
-apiKey: "REPLACE_WITH_YOUR_FIREBASE_API_KEY",
-```
+**変更の詳細**:
+- 修正前: 汎用的なプレースホルダー
+- 修正後: より明確な命名規則を使用
 
 ### 4. .env サンプルファイルの改善
 

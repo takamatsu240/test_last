@@ -5,13 +5,14 @@
 // Firebase Consoleから設定を取得:
 // https://console.firebase.google.com/ > プロジェクト設定 > 全般 > マイアプリ
 
+// TODO: Firebase Consoleから取得した実際の値に置き換えてください
 const firebaseConfig = {
-  apiKey: "REPLACE_WITH_YOUR_FIREBASE_API_KEY",
+  apiKey: "<your-api-key-here>",  // Firebase Console > プロジェクト設定 > 全般から取得
   authDomain: "tecnos-cbp.firebaseapp.com",
   projectId: "tecnos-cbp",
   storageBucket: "tecnos-cbp.appspot.com",
-  messagingSenderId: "REPLACE_WITH_YOUR_MESSAGING_SENDER_ID",
-  appId: "REPLACE_WITH_YOUR_APP_ID"
+  messagingSenderId: "<your-sender-id>",  // Firebase Console から取得
+  appId: "<your-app-id>"  // Firebase Console から取得
 };
 
 // Firebase初期化
