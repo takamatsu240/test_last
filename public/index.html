@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="課題管理システム - 課題一覧（モバイル対応）">
+    <title>課題一覧 | タスク管理</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>課題一覧</h1>
+            <button class="filter-btn" id="filterBtn">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M2 4h16M5 10h10M8 16h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                フィルター
+            </button>
+        </header>
+
+        <div class="filter-panel" id="filterPanel">
+            <div class="filter-group">
+                <label>ステータス</label>
+                <div class="filter-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" value="全て" checked> 全て
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" value="オープン"> オープン
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" value="作業中"> 作業中
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" value="確認待ち"> 確認待ち
+                    </label>
+                </div>
+            </div>
+            <div class="filter-group">
+                <label>重要度</label>
+                <div class="filter-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" value="高" checked> 高
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" value="中" checked> 中
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" value="低" checked> 低
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="search-box">
+            <svg class="search-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="2"/>
+                <path d="M13 13l5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <input type="text" id="searchInput" placeholder="課題を検索...">
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="totalCount">0</div>
+                <div class="stat-label">全体</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="openCount">0</div>
+                <div class="stat-label">オープン</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="overdueCount">0</div>
+                <div class="stat-label">期限超過</div>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>読み込み中...</p>
+        </div>
+
+        <div class="error-message" id="errorMessage" style="display: none;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                <path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <p id="errorText"></p>
+        </div>
+
+        <div class="issues-container" id="issuesContainer">
+            <!-- カード型の課題一覧がここに動的に挿入されます -->
+        </div>
+
+        <div class="empty-state" id="emptyState" style="display: none;">
+            <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                <circle cx="40" cy="40" r="35" stroke="currentColor" stroke-width="2" opacity="0.3"/>
+                <path d="M30 40h20M40 30v20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <h2>課題が見つかりません</h2>
+            <p>検索条件を変更するか、新しい課題を作成してください。</p>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <!-- アプリケーションスクリプト -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
