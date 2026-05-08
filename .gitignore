@@ -8,6 +8,21 @@ yarn-error.log*
 .env
 .env.local
 .env.*.local
+.env.production
+
+# Redis
+.redis_password
+*.rdb
+*.aof
+dump.rdb
+appendonly.aof
+
+# Secrets and credentials
+**/credentials.json
+**/*-key.json
+**/*.pem
+**/*.key
+**/service-account*.json
 
 # Exports directory (generated Excel files)
 exports/

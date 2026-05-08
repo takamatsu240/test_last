@@ -1,12 +1,17 @@
-// Firebase設定
-// 本番環境では環境変数から読み込むことを推奨
+// ⚠️ セキュリティ警告:
+// このファイルは公開されます。APIキーは公開情報として扱われます。
+// 本番環境では必ずFirebaseセキュリティルールでアクセス制御を設定してください。
+//
+// Firebase Consoleから設定を取得:
+// https://console.firebase.google.com/ > プロジェクト設定 > 全般 > マイアプリ
+
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
+  apiKey: "REPLACE_WITH_YOUR_FIREBASE_API_KEY",
   authDomain: "tecnos-cbp.firebaseapp.com",
   projectId: "tecnos-cbp",
   storageBucket: "tecnos-cbp.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  messagingSenderId: "REPLACE_WITH_YOUR_MESSAGING_SENDER_ID",
+  appId: "REPLACE_WITH_YOUR_APP_ID"
 };
 
 // Firebase初期化
