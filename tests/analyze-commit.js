@@ -72,47 +72,111 @@ const EXCLUDED_PATTERNS = [
   'desktop.ini'
 ];
 
-// セキュリティ: 機密情報検出パターン
+// セキュリティ: 機密情報検出パターン（プレースホルダー除外機能付き）
 const SECURITY_PATTERNS = [
   {
     name: 'OpenAI API Key',
-    pattern: /OPENAI_API_KEY\s*=\s*sk-[a-zA-Z0-9_-]+/gi,
-    severity: 'CRITICAL'
+    pattern: /sk-[a-zA-Z0-9_-]{20,}/g,
+    severity: 'CRITICAL',
+    excludePatterns: [
+      /sk-1234567890/i,
+      /sk-example/i,
+      /sk-test/i,
+      /sk-\.\.\./i,
+      /sk-proj-example/i,
+      /YOUR.*KEY/i,
+      /REPLACE.*WITH/i,
+      /\$\{.*\}/,  // 環境変数参照: ${OPENAI_API_KEY}
+      /\<.*\>/     // プレースホルダー: <YOUR_KEY>
+    ]
   },
   {
     name: 'Generic API Key (sk- prefix)',
     pattern: /['\"]sk-[a-zA-Z0-9_-]{20,}['\"]|sk-[a-zA-Z0-9_-]{20,}/g,
-    severity: 'CRITICAL'
+    severity: 'CRITICAL',
+    excludePatterns: [
+      /sk-1234567890/i,
+      /sk-example/i,
+      /sk-test/i,
+      /sk-sample/i
+    ]
   },
   {
     name: 'Password in code',
     pattern: /password\s*[:=]\s*['\"][^'\"]{3,}['\"]|pwd\s*[:=]\s*['\"][^'\"]{3,}['\"]/gi,
-    severity: 'HIGH'
+    severity: 'HIGH',
+    excludePatterns: [
+      /changeme/i,
+      /mypassword123/i,
+      /password123/i,
+      /example/i,
+      /sample/i,
+      /dummy/i,
+      /test123/i,
+      /YOUR.*PASSWORD/i,
+      /REPLACE.*WITH/i,
+      /\$\(cat.*\)/,  // 動的参照: $(cat /root/.redis_password)
+      /\$\{.*\}/,     // 環境変数参照
+      /\<.*\>/        // プレースホルダー
+    ]
   },
   {
     name: 'Generic API Key',
     pattern: /api[_-]?key\s*[:=]\s*['\"][^'\"]+['\"]|apikey\s*[:=]\s*['\"][^'\"]+['\"]/gi,
-    severity: 'HIGH'
+    severity: 'HIGH',
+    excludePatterns: [
+      /YOUR.*KEY/i,
+      /REPLACE.*WITH/i,
+      /example/i,
+      /sample/i,
+      /test/i,
+      /dummy/i,
+      /AIzaSyD\.\.\./i,
+      /AIzaSyD1234567890/i,
+      /\$\{.*\}/,
+      /\<.*\>/
+    ]
   },
   {
     name: 'Secret/Token',
     pattern: /secret\s*[:=]\s*['\"][^'\"]{8,}['\"]|token\s*[:=]\s*['\"][^'\"]{8,}['\"]/gi,
-    severity: 'HIGH'
+    severity: 'HIGH',
+    excludePatterns: [
+      /YOUR.*SECRET/i,
+      /YOUR.*TOKEN/i,
+      /REPLACE.*WITH/i,
+      /example/i,
+      /sample/i,
+      /test/i,
+      /dummy/i,
+      /\$\{.*\}/,
+      /\<.*\>/
+    ]
   },
   {
     name: 'AWS Access Key',
     pattern: /AKIA[0-9A-Z]{16}/g,
-    severity: 'CRITICAL'
+    severity: 'CRITICAL',
+    excludePatterns: [
+      /AKIAIOSFODNN7EXAMPLE/i,  // AWS公式ドキュメントのサンプル
+      /AKIA1234567890123456/i
+    ]
   },
   {
     name: 'Private Key',
     pattern: /-----BEGIN\s+(RSA\s+)?PRIVATE\s+KEY-----/gi,
-    severity: 'CRITICAL'
+    severity: 'CRITICAL',
+    excludePatterns: [
+      // プライベートキーにプレースホルダーは通常ないため空
+    ]
   },
   {
     name: 'Firebase Service Account',
     pattern: /private_key_id|private_key.*BEGIN PRIVATE KEY/gi,
-    severity: 'CRITICAL'
+    severity: 'CRITICAL',
+    excludePatterns: [
+      // Firebase Service Accountは実際のファイルのみ検出
+    ]
   }
 ];
 
@@ -207,7 +271,22 @@ function getFileDiff(commitHash, filePath) {
 }
 
 /**
- * コミット差分のセキュリティスキャン
+ * プレースホルダー判定関数
+ * @param {string} text - チェック対象のテキスト
+ * @param {RegExp[]} excludePatterns - 除外パターンのリスト
+ * @returns {boolean} プレースホルダーの場合true
+ */
+function isPlaceholder(text, excludePatterns) {
+  if (!excludePatterns || excludePatterns.length === 0) {
+    return false;
+  }
+
+  // いずれかの除外パターンにマッチすればプレースホルダー
+  return excludePatterns.some(pattern => pattern.test(text));
+}
+
+/**
+ * コミット差分のセキュリティスキャン（プレースホルダー除外機能付き）
  * 機密情報（APIキー、パスワード等）の検出
  * @param {string} commitHash - コミットハッシュ
  * @param {string[]} changedFiles - 変更されたファイルのリスト
@@ -215,6 +294,7 @@ function getFileDiff(commitHash, filePath) {
  */
 function scanCommitForSecrets(commitHash, changedFiles) {
   const findings = [];
+  let skippedCount = 0;  // プレースホルダーでスキップした件数
 
   console.log('🔒 セキュリティスキャン: コミット差分を検査中...');
 
@@ -240,6 +320,13 @@ function scanCommitForSecrets(commitHash, changedFiles) {
         const uniqueMatches = [...new Set(matches)];
 
         for (const match of uniqueMatches) {
+          // プレースホルダーチェック
+          if (isPlaceholder(match, pattern.excludePatterns)) {
+            skippedCount++;
+            continue;  // プレースホルダーはスキップ
+          }
+
+          // 本物の機密情報として記録
           findings.push({
             file,
             type: pattern.name,
@@ -250,6 +337,11 @@ function scanCommitForSecrets(commitHash, changedFiles) {
         }
       }
     }
+  }
+
+  // デバッグ情報
+  if (skippedCount > 0) {
+    console.log(`ℹ️  プレースホルダー除外: ${skippedCount}件をスキップ`);
   }
 
   return findings;
@@ -1097,9 +1189,6 @@ async function main() {
     console.log(`    判定: ${data.phase}`);
     console.log(`    アクション: クローズ候補マーク（レビュー必須）`);
     console.log(`    理由: ${data.reason}`);
-    if (data.aiAnalysis) {
-      console.log(`    AI信頼度: ${(data.aiAnalysis.confidence * 100).toFixed(0)}%`);
-    }
     console.log('');
   }
 
